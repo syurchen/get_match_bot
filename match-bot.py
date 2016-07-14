@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# MySQL
+#mysql
 from __future__ import print_function
 import pymysql
 
@@ -14,12 +14,12 @@ mysql = pymysql.connect(host = _db_host, port = 3306, user = _db_user, passwd= _
 _db = mysql.cursor()
 
 
-# Imports for Telegram
+# imports for telegram
 from telegram.ext import Updater, CommandHandler
 import logging
 import sys
 
-# Imports for Dota
+#imports for dota
 from dotamatch.history import MatchHistory
 from dotamatch.players import ResolveVanityUrl, id_to_32
 
@@ -34,9 +34,18 @@ steam_api_key = "***"
 dota_history = MatchHistory(steam_api_key)
 dota_storage = {}
 
-# Message handler funcs
+#Message handler funcs
 def help(bot, update):
     bot.sendMessage(update.message.chat_id, text='Hello. This bot gives game stats on request. It supports DotA2 so far. Start with /dota_register')
+
+def dota_LM(bot, update):
+    global dota_history, _db
+    try:
+        user = get_db_user(_db, "telegram_id='%s'" % update.message.from_user.id)
+        last_match = dota_history.matches(account_id = user['steam_id'], matches_requested = 1)
+        bot.sendMessage(update.message.chat_id, text = 'http://www.dotabuff.com/matches/' + str(last_match[0].match_id))
+    except:
+        bot.sendMessage(update.message.chat_id, text = "Something went wrong. Did you /dota_register ?")
 
 def dota_register(bot, update, args):
     global dota_history, steam_api_key, _db
@@ -51,23 +60,15 @@ def dota_register(bot, update, args):
 
     except (IndexError, ValueError):
         bot.sendMessage(update.message.chat_id, text='This command needs your steam ID after space you can obtain it like this http://dl2.joxi.net/drive/2016/07/13/0013/2351/911663/63/e2a5d4a5b9.png')
-        return False
+        return 0;
 
-def dota_LM(bot, update):
-    global dota_history, _db
-    try:
-        user = get_db_user(_db, "telegram_id='%s'" % update.message.from_user.id)
-        last_match = dota_history.matches(account_id = user['steam_id'], matches_requested = 1)
-        bot.sendMessage(update.message.chat_id, text = 'http://www.dotabuff.com/matches/' + str(last_match[0].match_id))
-    except:
-        bot.sendMessage(update.message.chat_id, text = "Something went wrong. Did you /dota_register ?")
 
 def error(bot, update, error):
     logger.warn('Update "%s" caused error "%s"' % (update, error))
 
-# Database functions
+#DataBase funcs
 def get_db_user(db, *args):
-# Note that values should be in single quotes
+# note that values should be in single quotes
     query = ' and '.join(args)
 
     db.execute("show columns from match_bot_users")
@@ -90,6 +91,7 @@ def add_db_user(db, *args):
     columns = ','.join(columns)
     db.execute("insert into match_bot_users (%s) values (%s)" % (columns, values))
 
+
 def main():
     global job_queue, _to_display, _db
 
@@ -99,13 +101,13 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # On different commands - answer in Telegram
+    # on different commands - answer in Telegram
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("dota_LM", dota_LM))
     dp.add_handler(CommandHandler("dota_register", dota_register, pass_args=True))
-
-    # Log all errors
+    # log all errors
     dp.add_error_handler(error)
+
 
     # Start the Bot
     updater.start_polling()
