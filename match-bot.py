@@ -14,7 +14,7 @@ mysql = pymysql.connect(host = _db_host, port = 3306, user = _db_user, passwd= _
 _db = mysql.cursor()
 
 
-# imports for Telegram
+# Imports for Telegram
 from telegram.ext import Updater, CommandHandler
 import logging
 import sys
@@ -34,7 +34,7 @@ steam_api_key = "***"
 dota_history = MatchHistory(steam_api_key)
 dota_storage = {}
 
-#Message handler funcs
+# Message handler funcs
 def help(bot, update):
     bot.sendMessage(update.message.chat_id, text='Hello. This bot gives game stats on request. It supports DotA2 so far. Start with /dota_register')
 
@@ -51,7 +51,7 @@ def dota_register(bot, update, args):
 
     except (IndexError, ValueError):
         bot.sendMessage(update.message.chat_id, text='This command needs your steam ID after space you can obtain it like this http://dl2.joxi.net/drive/2016/07/13/0013/2351/911663/63/e2a5d4a5b9.png')
-        return 0; # return False
+        return False
 
 def dota_LM(bot, update):
     global dota_history, _db
@@ -65,9 +65,9 @@ def dota_LM(bot, update):
 def error(bot, update, error):
     logger.warn('Update "%s" caused error "%s"' % (update, error))
 
-#DataBase funcs
+# Database functions
 def get_db_user(db, *args):
-# note that values should be in single quotes
+# Note that values should be in single quotes
     query = ' and '.join(args)
 
     db.execute("show columns from match_bot_users")
@@ -99,12 +99,12 @@ def main():
     # Get the dispatcher to register handlers
     dp = updater.dispatcher
 
-    # on different commands - answer in Telegram
+    # On different commands - answer in Telegram
     dp.add_handler(CommandHandler("help", help))
     dp.add_handler(CommandHandler("dota_LM", dota_LM))
     dp.add_handler(CommandHandler("dota_register", dota_register, pass_args=True))
 
-    # log all errors
+    # Log all errors
     dp.add_error_handler(error)
 
     # Start the Bot
